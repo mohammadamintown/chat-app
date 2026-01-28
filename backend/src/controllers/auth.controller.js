@@ -1,6 +1,5 @@
 import { generateToken } from "../lib/utils.js";
 import User from "../models/User.js";
-import bcrypt from "bcryptjs";
 
 export const signup = async (req, res) => {
   const { fullName, email, password } = req.body;
@@ -19,34 +18,26 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: 'Invalid email format' });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (user) return res.status(400).json({ message: 'Email is already registered' });
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
 
     const newUser = new User({
       fullName,
       email,
-      password: hashedPassword,
+      password,
     });
 
-    if (newUser) {
-      const savedUser = await newUser.save();
-      generateToken(res, savedUser._id);
+    const savedUser = await newUser.save();
+    generateToken(res, savedUser._id);
 
-      res.status(201).json({
-        _id: savedUser._id,
-        fullName: savedUser.fullName,
-        email: savedUser.email,
-        profilePic: savedUser.profilePic,
-      });
+    res.status(201).json({
+      _id: savedUser._id,
+      fullName: savedUser.fullName,
+      email: savedUser.email,
+      profilePic: savedUser.profilePic,
+    });
 
-      // todo: send a welcome email to the user
-    } else {
-      return res.status(400).json({ message: 'Invalid user data' });
-    }
-
+    // todo: send a welcome email to the user
   } catch (error) {
     console.log("Error in signup controller:", error);
     res.status(500).json({ message: "Internal server error" });
