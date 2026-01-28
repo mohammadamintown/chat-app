@@ -13,17 +13,21 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
 
+    if (typeof email !== 'string') {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
+    const normalizedEmail = email.trim().toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(normalizedEmail)) {
       return res.status(400).json({ message: 'Invalid email format' });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email: normalizedEmail });
     if (user) return res.status(400).json({ message: 'Email is already registered' });
 
     const newUser = new User({
       fullName,
-      email,
+      email: normalizedEmail,
       password,
     });
 
